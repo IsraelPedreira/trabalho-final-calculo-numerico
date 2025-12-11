@@ -26,9 +26,8 @@ def lagrange_parallel_batch(shares_batch: torch.Tensor, x_alvo: float = 0.0) -> 
     terms_matrix = terms_matrix * mask + eye
 
     L_i = torch.prod(terms_matrix, dim=2)
-    segredos = torch.sum(Y * L_i, dim=1)
+    return torch.sum(Y * L_i, dim=1)
 
-    return segredos
 
 if __name__ == "__main__":
     if torch.cuda.is_available():

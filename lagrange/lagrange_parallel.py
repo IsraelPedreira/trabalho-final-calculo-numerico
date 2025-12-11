@@ -31,8 +31,7 @@ def lagrange_parallel(shares: List[Tuple[float, float]], x: float = 0.0) -> floa
     terms_matrix = terms_matrix * mask + eye  # substitui diagonal por 1
 
     L_i: torch.Tensor = torch.prod(terms_matrix, dim=1)
-    segredo: torch.Tensor = torch.sum(Y * L_i)
-    return float(segredo.item())
+    return torch.sum(Y * L_i)
 
 if __name__ == "__main__":
 
