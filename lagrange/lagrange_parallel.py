@@ -1,7 +1,7 @@
 import torch
 from typing import List, Tuple
 
-def lagrange_gpu(shares: List[Tuple[float, float]], x: float = 0.0) -> float:
+def lagrange_parallel(shares: List[Tuple[float, float]], x: float = 0.0) -> float:
     """
     Reconstrói o segredo a partir das partes usando interpolação de Lagrange. VETORIZADO NA GPU.
 
@@ -37,5 +37,5 @@ def lagrange_gpu(shares: List[Tuple[float, float]], x: float = 0.0) -> float:
 if __name__ == "__main__":
 
     partes = [(1, 1234), (2, 38), (3, 91011)]
-    segredo = lagrange_gpu(partes)
+    segredo = lagrange_parallel(partes)
     print(f"segredo: {segredo}")

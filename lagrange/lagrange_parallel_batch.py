@@ -1,7 +1,7 @@
 import torch
 from typing import Tuple
 
-def lagrange_batch_gpu(shares_batch: torch.Tensor, x_alvo: float = 0.0) -> torch.Tensor:
+def lagrange_parallel_batch(shares_batch: torch.Tensor, x_alvo: float = 0.0) -> torch.Tensor:
     """
     Reconstrói o segredo a partir das partes usando interpolação de Lagrange. VETORIZADO NA GPU (BATCHES).
 
@@ -42,10 +42,10 @@ if __name__ == "__main__":
         dados_y = torch.randn(BATCH_SIZE, K, 1, device=DEVICE)
         batch_input = torch.cat([dados_x, dados_y], dim=2)
 
-        _ = lagrange_batch_gpu(batch_input)
+        _ = lagrange_parallel_batch(batch_input)
         torch.cuda.synchronize()
 
-        segredos_recuperados = lagrange_batch_gpu(batch_input)
+        segredos_recuperados = lagrange_parallel_batch(batch_input)
         print(f"Shape da saída: {segredos_recuperados.shape}")
         
     else:
