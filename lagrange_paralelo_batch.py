@@ -3,7 +3,11 @@ from typing import Tuple
 
 def lagrange_batch_gpu(shares_batch: torch.Tensor, x_alvo: float = 0.0) -> torch.Tensor:
     """
-    Reconstrói múltiplos segredos em paralelo usando interpolação de Lagrange na GPU.
+    Reconstrói o segredo a partir das partes usando interpolação de Lagrange. VETORIZADO NA GPU (BATCHES).
+
+    :param shares: Uma lista de tuplas (x_i, y_i) representando as partes.
+    :param x: O valor de x no qual avaliar o polinômio. 0 para o segredo.
+    :return: O segredo reconstruído.
     """
     device = shares_batch.device
     _, k, _ = shares_batch.shape
