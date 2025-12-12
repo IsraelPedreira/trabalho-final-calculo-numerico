@@ -16,12 +16,12 @@ def lagrange(shares: list[tuple[float, float]], x: float = 0) -> float:
             "São necessárias pelo menos 2 partes para reconstruir o segredo"
         )
 
-    secret = 0.0  # float ao invés de Fraction(0)
+    secret = 0.0 
     n = len(shares)
 
     for i in range(n):
-        x_i = float(shares[i][0])  # float ao invés de Fraction
-        term = float(shares[i][1])  # float ao invés de Fraction
+        x_i = float(shares[i][0])  
+        term = float(shares[i][1]) 
 
         for j in range(n):
             if j != i:
@@ -30,7 +30,6 @@ def lagrange(shares: list[tuple[float, float]], x: float = 0) -> float:
                 if x_i == x_j:
                     raise ValueError(f"Valores de x duplicados encontrados: {x_i}")
 
-                # Operação de float pura - ~1000x mais rápida
                 term *= (x - x_j) / (x_i - x_j)
 
         secret += term
