@@ -1,6 +1,7 @@
 import torch
 from typing import List, Tuple
 
+
 def lagrange_parallel(shares: List[Tuple[float, float]], x: float = 0.0) -> float:
     """
     Reconstrói o segredo a partir das partes usando interpolação de Lagrange. VETORIZADO NA GPU.
@@ -10,9 +11,9 @@ def lagrange_parallel(shares: List[Tuple[float, float]], x: float = 0.0) -> floa
     :return: O segredo reconstruído.
     """
 
-    device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
-    #print("Device:", device)
-    
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    # print("Device:", device)
+
     x_vals: List[float] = [s[0] for s in shares]
     y_vals: List[float] = [s[1] for s in shares]
 
@@ -31,7 +32,8 @@ def lagrange_parallel(shares: List[Tuple[float, float]], x: float = 0.0) -> floa
     terms_matrix = terms_matrix * mask + eye  # substitui diagonal por 1
 
     L_i: torch.Tensor = torch.prod(terms_matrix, dim=1)
-    return torch.sum(Y * L_i)
+    return torch.sum(Y * L_i).item()
+
 
 if __name__ == "__main__":
 
