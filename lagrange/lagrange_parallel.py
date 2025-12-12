@@ -11,7 +11,7 @@ def lagrange_parallel(shares: List[Tuple[float, float]], x: float = 0.0) -> floa
     """
 
     device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print("Device:", device)
+    #print("Device:", device)
     
     x_vals: List[float] = [s[0] for s in shares]
     y_vals: List[float] = [s[1] for s in shares]
