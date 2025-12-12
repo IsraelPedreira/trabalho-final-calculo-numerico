@@ -9,10 +9,10 @@ def main():
     ks = [2, 3, 5, 7, 10, 12, 15, 20, 25, 30]
     interp_fns = [
         lagrange, 
-        lagrange_fraction,
+        #lagrange_fraction,
         #lagrange_parallel, 
         newton,
-        newton_fraction,
+        #newton_fraction,
         #newton_parallel
     ]
 
