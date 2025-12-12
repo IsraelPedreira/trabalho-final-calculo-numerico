@@ -1,1 +1,1 @@
-from .benchmarking import InterpBenchmark
+from .benchmarking import InterpBenchmark, StreamingInterpolator

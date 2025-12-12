@@ -1,14 +1,18 @@
 import json
 import os
 from datetime import datetime
-import random
-from typing import Any, Optional, Callable
+from typing import Any, Optional, Callable, Type
 from time import perf_counter
 from matplotlib import pyplot as plt
-
-import torch
 import numpy as np
 
+class StreamingInterpolator:
+    def add_share(self, share: tuple[float, float]) -> None:
+        raise NotImplementedError
+    def get_secret(self) -> float:
+        raise NotImplementedError
+    def reset(self) -> None:
+        raise NotImplementedError
 
 class InterpBenchmark:
     def __init__(self, segredo_real: Optional[int] = None) -> None:
@@ -105,7 +109,7 @@ class InterpBenchmark:
     @staticmethod
     def generate_shares(k: int) -> np.ndarray:
         """Gera k pedaços (x, y) de um polinômio onde P(0) = SEGREDO"""
-        return np.random.randn(k, 2)
+        return np.random.uniform(-1, 1, size=(k, 2))
 
     @staticmethod
     def save_results(fpath: str, content: Any) -> str:
@@ -156,6 +160,78 @@ class InterpBenchmark:
                 plt.ylabel(metric)
 
             print("[!] Saving plot to file:", output_path)
-            plt.legend(results.items())
+            plt.legend(results.keys())
             plt.savefig(fpath + ".png")
             print("  => Saved.")
+    
+    def run_streaming(
+        self,
+        interpolator_classes: list[Type[StreamingInterpolator]],
+        max_k: int,
+        step: int = 1,
+        save_to_file: Optional[str] = None,
+        plot_results: bool = True
+    ) -> tuple[dict, str]:
+        """
+        Benchmark de Streaming: Mede o tempo acumulado para processar K shares chegando uma a uma.
+        """
+        # Gera o dataset completo de uma vez
+        all_shares = self.generate_shares(max_k)
+        
+        # Estrutura de resultados: armazenaremos o tempo ACUMULADO a cada passo
+        evaluations = {cls.__name__: {"x": [], "y_time": []} for cls in interpolator_classes}
+        
+        print(f"[!] Iniciando Benchmark de Streaming (Max K={max_k})...")
+
+        for cls in interpolator_classes:
+            print(f" => Testando {cls.__name__}...", end=" ", flush=True)
+            
+            interpolator = cls()
+            
+            total_time = 0.0
+            x_axis = []
+            y_times = []
+            
+            for i in range(max_k):
+                share = (all_shares[i][0], all_shares[i][1])
+                
+                start = perf_counter()
+                interpolator.add_share(share)
+                _ = interpolator.get_secret() 
+                dt = perf_counter() - start
+                total_time += dt
+                if (i + 1) % step == 0:
+                    x_axis.append(i + 1)
+                    y_times.append(total_time)
+            
+            evaluations[cls.__name__]["x"] = x_axis
+            evaluations[cls.__name__]["y_time"] = y_times
+            print(f"Finalizado (Total: {total_time:.4f}s)")
+
+        if save_to_file:
+            self.save_results(save_to_file, evaluations)
+            
+        if plot_results:
+            self._plot_streaming(evaluations, save_to_file or ".")
+            
+        return evaluations, ""
+
+    def _plot_streaming(self, results: dict, output_path: str):
+        print("[!] Plotting Streaming results...")
+        os.makedirs(output_path, exist_ok=True)
+        plt.figure(figsize=(10, 6))
+        plt.style.use("ggplot")
+        
+        for name, data in results.items():
+            plt.plot(data["x"], data["y_time"], label=name)
+            
+        plt.xlabel("Número de Shares Processadas (Streaming)")
+        plt.ylabel("Tempo Acumulado (s)")
+        plt.title("Comparação de Custo Acumulado em Streaming")
+        plt.legend()
+        plt.grid(True)
+        
+        fpath = os.path.join(output_path, "streaming_benchmark.png")
+        plt.savefig(fpath)
+        plt.close()
+        print(f"  => Plot salvo em {fpath}")
