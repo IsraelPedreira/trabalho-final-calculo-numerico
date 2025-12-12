@@ -1,6 +1,6 @@
 from benchmark import InterpBenchmark
-from lagrange import lagrange, lagrange_parallel
-from newton import newton, newton_parallel
+from lagrange import (lagrange, lagrange_fraction)
+from newton import (newton, newton_fraction)
 import numpy as np
 
 def main():
@@ -9,8 +9,10 @@ def main():
     ks = [2, 3, 5, 7, 10, 12, 15, 20, 25, 30]
     interp_fns = [
         lagrange, 
+        lagrange_fraction,
         #lagrange_parallel, 
-        newton, 
+        newton,
+        newton_fraction,
         #newton_parallel
     ]
 

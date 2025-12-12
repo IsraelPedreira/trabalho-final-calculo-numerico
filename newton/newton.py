@@ -1,5 +1,6 @@
 import numpy as np
-from typing import Tuple
+from typing import Tuple, List, Union
+from fractions import Fraction
 
 class NewtonIncremental:
     """Newton com suporte incremental para streaming."""
@@ -48,10 +49,71 @@ class NewtonIncremental:
         self.y = []
         self.coeffs = []
 
-
 def newton(shares: np.ndarray) -> float:
     """Wrapper para Newton no modo batch (compatível com InterpBenchmark)."""
     reconstrutor = NewtonIncremental()
+    for i in range(len(shares)):
+        reconstrutor.adicionar_share((shares[i][0], shares[i][1]))
+    return reconstrutor.obter_segredo()
+
+class NewtonIncrementalFraction:
+    """
+    Versão do Newton Incremental usando Aritmética Racional Exata (Fraction).
+    Garante erro zero de arredondamento, mas é significativamente mais lento.
+    """
+    
+    def __init__(self):
+        self.x = []
+        self.y = []
+        self.coeffs = [] 
+    
+    def adicionar_share(self, share: Tuple[float, float]) -> None:
+        """Adiciona um share e atualiza incrementalmente usando Fraction."""
+        xi = Fraction(share[0])
+        yi = Fraction(share[1])
+        
+        self.x.append(xi)
+        self.y.append(yi)
+        
+        n = len(self.x)
+        
+        if n == 1:
+            self.coeffs = [yi]
+        else:
+            new_coeff = yi
+            for j in range(n - 1):
+                numerator = new_coeff - self.coeffs[j]
+                denominator = xi - self.x[j]
+                new_coeff = numerator / denominator
+                
+            self.coeffs.append(new_coeff)
+    
+    def obter_segredo(self, x_alvo: float = 0.0) -> float:
+        """Avalia o polinômio em x_alvo usando aritmética exata."""
+        if not self.coeffs:
+            return 0.0
+    
+        target_x = Fraction(x_alvo)
+        n = len(self.coeffs)
+
+        segredo = Fraction(0, 1)
+        
+        for i in range(n):
+            term = self.coeffs[i]
+            for j in range(i):
+                term *= (target_x - self.x[j])
+            segredo += term
+        
+        return float(segredo)
+    
+    def reset(self):
+        self.x = []
+        self.y = []
+        self.coeffs = []
+
+def newton_fraction(shares: Union[np.ndarray, List[Tuple[float, float]]]) -> float:
+    """Wrapper para Newton Fraction no modo batch."""
+    reconstrutor = NewtonIncrementalFraction()
     for i in range(len(shares)):
         reconstrutor.adicionar_share((shares[i][0], shares[i][1]))
     return reconstrutor.obter_segredo()
