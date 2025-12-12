@@ -61,6 +61,18 @@ class InterpBenchmark:
         results_file = ""
 
         print(f"[!] Evaluating {len(interp_fns)} functions.")
+        
+        print("[!] Performing warm-up...")
+        warmup_shares = InterpBenchmark.generate_shares(k=min(k_values) if k_values else 3)
+        for fn in interp_fns:
+            try:
+                print(f"  => Warming up {fn.__name__}...", end=" ")
+                fn(warmup_shares)
+                print("done.")
+            except Exception as e:
+                print(f"skipped ({type(e).__name__}).")
+        print("  => Warm-up completed.\n")
+
         for k in k_values:
             shares = InterpBenchmark.generate_shares(
                 k=k,
