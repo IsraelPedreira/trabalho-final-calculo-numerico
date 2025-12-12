@@ -54,7 +54,15 @@ class ReconstrutorNewton:
             
             segredo += termo
             
-        return segredo
+        return segredo.numerator / segredo.denominator
+
+    @staticmethod
+    def run_newton(shares: list[tuple[int,int]]):
+        reconstrutor = ReconstrutorNewton()
+        for s in shares:
+            reconstrutor.adicionar_share(s)
+        return reconstrutor.obter_segredo()
+
 
 # --- 3. EXECUÇÃO DO BENCHMARK ---
 tamanhos_k = [5, 10, 20, 50, 100]

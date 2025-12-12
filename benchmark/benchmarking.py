@@ -133,17 +133,19 @@ class InterpBenchmark:
 
         print("[!] Plotting results...")
         os.makedirs(output_path, exist_ok=True)
-        for method, method_results in results.items():
-            for metric in metrics_to_plot:
+        for metric in metrics_to_plot:
+            fpath = os.path.join(output_path, f"{metric}")
+            for method, method_results in results.items():
                 metric_results = dict(method_results[metric].items())
                 xs = list(metric_results.keys())
                 ys = list(metric_results.values())
+                plt.style.use('ggplot')
                 plt.plot(xs, ys)
 
                 plt.xlabel("K")
                 plt.ylabel(metric)
                 
-                fpath = os.path.join(output_path, f"{method}_metric")
-                print("[!] Saving plot to file:", output_path)
-                plt.savefig(fpath + ".png") 
-                print("  => Saved.")
+            print("[!] Saving plot to file:", output_path)
+            plt.legend(results.keys())
+            plt.savefig(fpath + ".png") 
+            print("  => Saved.")
