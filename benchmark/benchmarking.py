@@ -18,19 +18,22 @@ class InterpBenchmark:
     def __init__(self, segredo_real: Optional[int] = None) -> None:
         self.segredo_real = segredo_real
 
-    def run_for_one_fn(
-        self, shares: np.ndarray, interp_fn: Callable
-    ) -> dict[str, float]:
+    def run_for_one_fn(self, shares: np.ndarray, interp_fn: Callable) -> dict[str, float]:
         metrics = {
             "exec_time_ms": float("inf"),
             "output": float("inf"),
+            "error": float("inf") 
         }
+        
         start_time = perf_counter()
         output = interp_fn(shares)
         end_time = perf_counter()
 
         metrics["exec_time_ms"] = end_time - start_time
         metrics["output"] = output
+        
+        if self.segredo_real is not None:
+            metrics["error"] = abs(output - self.segredo_real)
 
         return metrics
 
@@ -107,9 +110,16 @@ class InterpBenchmark:
         return evaluations, results_file
 
     @staticmethod
-    def generate_shares(k: int) -> np.ndarray:
-        """Gera k pedaços (x, y) de um polinômio onde P(0) = SEGREDO"""
-        return np.random.uniform(-1, 1, size=(k, 2))
+    def generate_shares(k: int, secret: float = 42.0, degree: int = 2) -> np.ndarray:
+        if degree is None or degree < 1:
+            degree = k-1
+        
+        indices = np.arange(1, k + 1)
+        x = np.cos((2 * indices - 1) * np.pi / (2 * k))
+
+        y = secret + (x ** degree)
+        
+        return np.column_stack((x, y))
 
     @staticmethod
     def save_results(fpath: str, content: Any) -> str:
@@ -136,34 +146,48 @@ class InterpBenchmark:
         metrics_to_plot: list[str] = ["exec_time_ms"],
     ) -> None:
         if isinstance(results, str):
-            results = json.loads(results)
-        if isinstance(results, dict):
-            pass
-        else:
-            raise TypeError(
-                f"`results` deve ser o caminho para um arquivo ou um dicionário com os resultados. Recebido: {type(results)}"
-            )
-
-        assert isinstance(results, dict), "Unreachable"
+            with open(results, 'r') as f:
+                results = json.loads(f.read())
 
         print("[!] Plotting results...")
         os.makedirs(output_path, exist_ok=True)
+        
         for metric in metrics_to_plot:
+            plt.figure(figsize=(10, 6))
             fpath = os.path.join(output_path, f"{metric}")
+            
             for method in results.keys():
-                xs = list(results[method].keys())
-                ys = [results[method][k][metric] for k in xs]
+                raw_keys = results[method].keys()
+                xs = sorted([int(k) for k in raw_keys])
+                
+                ys = []
+                for k in xs:
+                    if k in results[method]:
+                        val = results[method][k][metric]
+                    elif str(k) in results[method]:
+                        val = results[method][str(k)][metric]
+                    else:
+                        print(f"Warning: Key {k} not found for method {method}")
+                        continue
+                    ys.append(val)
+
                 plt.style.use("ggplot")
-                plt.plot(xs, ys)
+                plt.plot(xs, ys, marker='o', label=method)
 
-                plt.xlabel("K")
-                plt.ylabel(metric)
+            plt.xlabel("K (Shares)")
+            plt.ylabel(metric)
+            plt.title(f"Comparação: {metric}")
+        
+            if "error" in metric.lower():
+                plt.yscale("log")
+                plt.ylabel(f"{metric} (Log Scale)")
 
-            print("[!] Saving plot to file:", output_path)
-            plt.legend(results.keys())
+            plt.legend()
+            plt.grid(True)
             plt.savefig(fpath + ".png")
-            print("  => Saved.")
-    
+            plt.close()
+            print(f"  => Saved {metric} plot to {fpath}.png")
+
     def run_streaming(
         self,
         interpolator_classes: list[Type[StreamingInterpolator]],
