@@ -138,12 +138,13 @@ class InterpBenchmark:
                 metric_results = dict(method_results[metric].items())
                 xs = list(metric_results.keys())
                 ys = list(metric_results.values())
+                plt.style.use('ggplot')
                 plt.plot(xs, ys)
 
                 plt.xlabel("K")
                 plt.ylabel(metric)
                 
-                fpath = os.path.join(output_path, f"{method}_metric")
+                fpath = os.path.join(output_path, f"{method}_{metric}")
                 print("[!] Saving plot to file:", output_path)
                 plt.savefig(fpath + ".png") 
                 print("  => Saved.")
