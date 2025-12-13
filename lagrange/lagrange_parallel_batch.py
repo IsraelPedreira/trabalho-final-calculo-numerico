@@ -1,7 +1,8 @@
 import torch
 from typing import Tuple
 
-def lagrange_parallel_batch(shares_batch: torch.Tensor, x_alvo: float = 0.0) -> torch.Tensor:
+
+def lagrange_parallel_batch(input: list, x_alvo: float = 0.0) -> torch.Tensor:
     """
     Reconstrói o segredo a partir das partes usando interpolação de Lagrange. VETORIZADO NA GPU (BATCHES).
 
@@ -9,6 +10,7 @@ def lagrange_parallel_batch(shares_batch: torch.Tensor, x_alvo: float = 0.0) -> 
     :param x: O valor de x no qual avaliar o polinômio. 0 para o segredo.
     :return: O segredo reconstruído.
     """
+    shares_batch = torch.tensor(input, dtype=torch.float32)
     device = shares_batch.device
     _, k, _ = shares_batch.shape
 
