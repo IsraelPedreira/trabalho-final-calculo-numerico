@@ -110,7 +110,7 @@ class InterpBenchmark:
         return evaluations, results_file
 
     @staticmethod
-    def generate_shares(k: int, secret: float = 42.0, degree: int = 2) -> np.ndarray:
+    def generate_shares(k: int, secret: float = 42.0, degree: Optional[int] = None) -> np.ndarray:
         if degree is None or degree < 1:
             degree = k-1
         
