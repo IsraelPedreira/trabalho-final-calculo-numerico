@@ -1,5 +1,6 @@
 from typing import List
 from fractions import Fraction
+from benchmark import StreamingInterpolator
 
 def lagrange(shares: list[tuple[float, float]], x: float = 0) -> float:
     """
@@ -75,6 +76,56 @@ def lagrange_fraction(shares: List[tuple[float, float]], x: float = 0) -> float:
         secret += term
 
     return float(secret)
+
+class LagrangeStreaming(StreamingInterpolator):
+    """
+    Wrapper para simular comportamento de streaming com Lagrange.
+    
+    NOTA: Como Lagrange não é incremental, esta classe armazena todo o histórico
+    e recicla todo o cálculo a cada chamada de get_secret(). Isso é intencionalmente
+    ineficiente para fins de comparação com Newton.
+    """
+    def __init__(self):
+        self.shares_history = []
+
+    def add_share(self, share: tuple[float, float]) -> None:
+        """Apenas armazena o share na memória."""
+        self.shares_history.append(share)
+
+    def get_secret(self) -> float:
+        """
+        Recalcula o segredo do zero usando todos os shares acumulados.
+        """
+        if len(self.shares_history) < 2:
+            return 0.0
+        return lagrange(self.shares_history)
+
+    def reset(self) -> None:
+        self.shares_history = []
+
+class LagrangeStreamingFraction(StreamingInterpolator):
+    """
+    Versão de Lagrange Streaming usando Fractions para precisão infinita.
+    
+    NOTA: Muito mais lento que a versão float, mas elimina o erro de arredondamento.
+    """
+    def __init__(self):
+        self.shares_history = []
+
+    def add_share(self, share: tuple[float, float]) -> None:
+        """Apenas armazena o share na memória."""
+        self.shares_history.append(share)
+
+    def get_secret(self) -> float:
+        """
+        Recalcula o segredo do zero usando todos os shares acumulados com Fractions.
+        """
+        if len(self.shares_history) < 2:
+            return 0.0
+        return lagrange_fraction(self.shares_history)
+
+    def reset(self) -> None:
+        self.shares_history = []
 
 if __name__ == "__main__":
     partes = [(1, 1234), (2, 38), (3, 91011)]

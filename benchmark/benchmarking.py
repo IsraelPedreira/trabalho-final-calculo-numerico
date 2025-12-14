@@ -174,13 +174,13 @@ class InterpBenchmark:
                 plt.style.use("ggplot")
                 plt.plot(xs, ys, marker='o', label=method)
 
-            plt.xlabel("K (Shares)")
-            plt.ylabel(metric)
+            plt.xlabel("Número de Shares (K)")
+            plt.ylabel("Tempo de Execução (s)")
             plt.title(f"Comparação: {metric}")
         
             if "error" in metric.lower():
                 plt.yscale("log")
-                plt.ylabel(f"{metric} (Log Scale)")
+                plt.ylabel(f"Erro Absoluto (Escala Log)")
 
             plt.legend()
             plt.grid(True)
@@ -196,14 +196,10 @@ class InterpBenchmark:
         save_to_file: Optional[str] = None,
         plot_results: bool = True
     ) -> tuple[dict, str]:
-        """
-        Benchmark de Streaming: Mede o tempo acumulado para processar K shares chegando uma a uma.
-        """
-        # Gera o dataset completo de uma vez
-        all_shares = self.generate_shares(max_k)
         
-        # Estrutura de resultados: armazenaremos o tempo ACUMULADO a cada passo
-        evaluations = {cls.__name__: {"x": [], "y_time": []} for cls in interpolator_classes}
+        all_shares = self.generate_shares(max_k, secret=self.segredo_real)
+    
+        evaluations = {cls.__name__: {"x": [], "y_time": [], "y_error": []} for cls in interpolator_classes}
         
         print(f"[!] Iniciando Benchmark de Streaming (Max K={max_k})...")
 
@@ -215,21 +211,29 @@ class InterpBenchmark:
             total_time = 0.0
             x_axis = []
             y_times = []
+            y_errors = []
             
             for i in range(max_k):
                 share = (all_shares[i][0], all_shares[i][1])
                 
                 start = perf_counter()
                 interpolator.add_share(share)
-                _ = interpolator.get_secret() 
+                recuperado = interpolator.get_secret()
                 dt = perf_counter() - start
+                
                 total_time += dt
+                
+                erro_atual = abs(recuperado - self.segredo_real)
+
                 if (i + 1) % step == 0:
                     x_axis.append(i + 1)
                     y_times.append(total_time)
+                    y_errors.append(erro_atual) 
             
             evaluations[cls.__name__]["x"] = x_axis
             evaluations[cls.__name__]["y_time"] = y_times
+            evaluations[cls.__name__]["y_error"] = y_errors 
+            
             print(f"Finalizado (Total: {total_time:.4f}s)")
 
         if save_to_file:
@@ -243,19 +247,38 @@ class InterpBenchmark:
     def _plot_streaming(self, results: dict, output_path: str):
         print("[!] Plotting Streaming results...")
         os.makedirs(output_path, exist_ok=True)
+        
         plt.figure(figsize=(10, 6))
         plt.style.use("ggplot")
         
         for name, data in results.items():
             plt.plot(data["x"], data["y_time"], label=name)
             
-        plt.xlabel("Número de Shares Processadas (Streaming)")
+        plt.xlabel("Número de Shares Processadas")
         plt.ylabel("Tempo Acumulado (s)")
-        plt.title("Comparação de Custo Acumulado em Streaming")
+        plt.title("Streaming: Custo Computacional Acumulado")
         plt.legend()
         plt.grid(True)
         
-        fpath = os.path.join(output_path, "streaming_benchmark.png")
-        plt.savefig(fpath)
+        fpath_time = os.path.join(output_path, "streaming_time.png")
+        plt.savefig(fpath_time)
         plt.close()
-        print(f"  => Plot salvo em {fpath}")
+        print(f"  => Plot de TEMPO salvo em {fpath_time}")
+
+        plt.figure(figsize=(10, 6))
+        
+        for name, data in results.items():
+            erro_plot = [e if e > 0 else 1e-20 for e in data["y_error"]]
+            plt.plot(data["x"], erro_plot, label=name, marker='o', markersize=4)
+            
+        plt.xlabel("Número de Shares Processadas")
+        plt.ylabel("Erro Absoluto (Escala Log)")
+        plt.yscale("log") # Importante para ver a explosão do erro
+        plt.title("Streaming: Evolução do Erro Numérico")
+        plt.legend()
+        plt.grid(True)
+        
+        fpath_error = os.path.join(output_path, "streaming_error.png")
+        plt.savefig(fpath_error)
+        plt.close()
+        print(f"  => Plot de ERRO salvo em {fpath_error}")

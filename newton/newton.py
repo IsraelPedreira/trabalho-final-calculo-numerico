@@ -1,8 +1,9 @@
 import numpy as np
 from typing import Tuple, List, Union
 from fractions import Fraction
+from benchmark import StreamingInterpolator
 
-class NewtonIncremental:
+class NewtonStreaming(StreamingInterpolator):
     """Newton com suporte incremental para streaming."""
     
     def __init__(self):
@@ -10,7 +11,7 @@ class NewtonIncremental:
         self.y = []
         self.coeffs = []
     
-    def adicionar_share(self, share: Tuple[float, float]) -> None:
+    def add_share(self, share: Tuple[float, float]) -> None:
         """Adiciona um share e atualiza incrementalmente."""
         xi, yi = float(share[0]), float(share[1])
         self.x.append(xi)
@@ -27,7 +28,7 @@ class NewtonIncremental:
                 new_coeff = numerador / denominador
             self.coeffs.append(new_coeff)
     
-    def obter_segredo(self, x_alvo: float = 0.0) -> float:
+    def get_secret(self, x_alvo: float = 0.0) -> float:
         """Avalia o polinômio em x_alvo."""
         if not self.coeffs:
             return 0.0
@@ -51,12 +52,12 @@ class NewtonIncremental:
 
 def newton(shares: np.ndarray) -> float:
     """Wrapper para Newton no modo batch (compatível com InterpBenchmark)."""
-    reconstrutor = NewtonIncremental()
+    reconstrutor = NewtonStreaming()
     for i in range(len(shares)):
-        reconstrutor.adicionar_share((shares[i][0], shares[i][1]))
-    return reconstrutor.obter_segredo()
+        reconstrutor.add_share((shares[i][0], shares[i][1]))
+    return reconstrutor.get_secret()
 
-class NewtonIncrementalFraction:
+class NewtonStreamingFraction(StreamingInterpolator):
     """
     Versão do Newton Incremental usando Aritmética Racional Exata (Fraction).
     Garante erro zero de arredondamento, mas é significativamente mais lento.
@@ -67,7 +68,7 @@ class NewtonIncrementalFraction:
         self.y = []
         self.coeffs = [] 
     
-    def adicionar_share(self, share: Tuple[float, float]) -> None:
+    def add_share(self, share: Tuple[float, float]) -> None:
         """Adiciona um share e atualiza incrementalmente usando Fraction."""
         xi = Fraction(share[0])
         yi = Fraction(share[1])
@@ -88,7 +89,7 @@ class NewtonIncrementalFraction:
                 
             self.coeffs.append(new_coeff)
     
-    def obter_segredo(self, x_alvo: float = 0.0) -> float:
+    def get_secret(self, x_alvo: float = 0.0) -> float:
         """Avalia o polinômio em x_alvo usando aritmética exata."""
         if not self.coeffs:
             return 0.0
@@ -113,7 +114,7 @@ class NewtonIncrementalFraction:
 
 def newton_fraction(shares: Union[np.ndarray, List[Tuple[float, float]]]) -> float:
     """Wrapper para Newton Fraction no modo batch."""
-    reconstrutor = NewtonIncrementalFraction()
+    reconstrutor = NewtonStreamingFraction()
     for i in range(len(shares)):
-        reconstrutor.adicionar_share((shares[i][0], shares[i][1]))
-    return reconstrutor.obter_segredo()
+        reconstrutor.add_share((shares[i][0], shares[i][1]))
+    return reconstrutor.get_secret()
